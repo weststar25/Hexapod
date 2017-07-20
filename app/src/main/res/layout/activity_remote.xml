@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0px"
+            android:layout_weight="2"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/camBtn"
+                android:layout_width="0px"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="CAMERA"/>
+
+            <Button
+                android:id="@+id/saveBtn"
+                android:layout_width="0px"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="SAVE"/>
+
+
+            <TextView
+                android:layout_width="0px"
+                android:layout_height="match_parent"
+                android:layout_weight="2"
+                android:layout_margin="5dp"
+                android:hint="연결상태표시"
+                android:gravity="center"/>
+
+        </LinearLayout> <!-- 버튼들 -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0px"
+            android:layout_weight="25"
+            android:orientation="vertical">
+
+            <VideoView
+                android:id="@+id/camView"
+                android:layout_width="match_parent"
+                android:layout_height="0px"
+                android:layout_weight="1"
+                android:visibility="gone"/>
+
+            <ImageView
+                android:id="@+id/mapView"
+                android:layout_width="match_parent"
+                android:layout_height="0px"
+                android:layout_weight="1" />
+
+            <com.melnykov.fab.FloatingActionButton
+                android:id="@+id/destBtn"
+                android:layout_width="match_parent"
+                android:layout_height="0px"
+                android:layout_gravity="bottom|right"
+                android:layout_margin="5dp"
+                android:src="@drawable/ic_open_with_black_24dp"
+                app:fab_colorNormal="@color/fabPrimary"
+                app:fab_colorPressed="@color/fabPressed"
+                app:fab_colorRipple="@color/fabRipple" />
+        </LinearLayout> <!-- 캠화면 & 지도 -->
+    </LinearLayout>
+</layout>
