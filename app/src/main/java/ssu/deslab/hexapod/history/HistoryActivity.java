@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
+import android.view.View;
 
 import ssu.deslab.hexapod.R;
 import ssu.deslab.hexapod.databinding.ActivityHistoryBodyBinding;
@@ -23,7 +24,6 @@ public class HistoryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         ahib = DataBindingUtil.setContentView(this, R.layout.activity_history_body);
         ahib.setActivity(this);
-
         setRecyclerView();
     }
 
@@ -32,7 +32,13 @@ public class HistoryActivity extends AppCompatActivity {
         ahib.historyRecyclerView.addItemDecoration(new SimpleDividerItemDecoration(this));
         HistoryAdapter adapter = new HistoryAdapter(this);
         ahib.historyRecyclerView.setAdapter(adapter);
-
         adapter.updateItems(DataUtil.getDatas());
     }
+
+    public View.OnClickListener onHistroyBtnClick = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            // 삭제, 공유(facebook, kakao) 등
+        }
+    };
 }

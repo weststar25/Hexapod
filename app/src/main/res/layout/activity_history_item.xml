@@ -34,6 +34,7 @@
                     android:gravity="center_vertical"/>
 
                 <Button
+                    android:id="@+id/historyBtn"
                     android:layout_width="0px"
                     android:layout_height="match_parent"
                     android:layout_weight="1"/>

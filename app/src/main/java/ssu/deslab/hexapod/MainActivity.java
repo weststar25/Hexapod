@@ -3,6 +3,7 @@ package ssu.deslab.hexapod;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Handler;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -22,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     ActivityMainBinding mainBinding;
     ActivityConnectBinding connectBinding;
     private String robotIP;
-    private String connectResult;
+    private String connectResult = "Connection Success";
     private int robotPort;
     private final int reqCode4HistoryActivity = 0;
     protected InetSocket inetSocket;
@@ -30,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         mainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         mainBinding.connectBtn.setOnClickListener(onConnectBtnClick);
         mainBinding.historyBtn.setOnClickListener(onHistoryBtnClick);
@@ -85,12 +87,14 @@ public class MainActivity extends AppCompatActivity {
     private Runnable runnableStart = new Runnable() {
         @Override
         public void run() {
-//            if(inetSocket.connect(robotIP, robotPort, "app", "robot") == false ||
-//                    inetSocket.send("connect") == false) {
+//            robotIP = connectBinding.ipTxt.getText().toString();
+//            robotPort = Integer.getInteger(connectBinding.portTxt.getText().toString());
+//            if(inetSocket.connect(robotIP, robotPort, "app", "robot") == false) {
 //                connectResult = "Connection Error!";
+//                Toast.makeText(MainActivity.this, connectResult, Toast.LENGTH_SHORT).show();
 //            }
             startRemoteActivity(reqCode4HistoryActivity);
-            Toast.makeText(MainActivity.this, "Connection Success", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, connectResult, Toast.LENGTH_SHORT).show();
         }
     };
 

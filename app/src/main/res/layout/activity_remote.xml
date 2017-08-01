@@ -46,15 +46,13 @@
             <VideoView
                 android:id="@+id/camView"
                 android:layout_width="match_parent"
-                android:layout_height="0px"
-                android:layout_weight="1"
+                android:layout_height="230dp"
                 android:visibility="gone"/>
 
             <ImageView
                 android:id="@+id/mapView"
                 android:layout_width="match_parent"
-                android:layout_height="0px"
-                android:layout_weight="1" />
+                android:layout_height="460dp" />
 
             <com.melnykov.fab.FloatingActionButton
                 android:id="@+id/destBtn"
