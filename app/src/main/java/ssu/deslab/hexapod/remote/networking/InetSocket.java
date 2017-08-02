@@ -14,15 +14,17 @@ import android.util.Log;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 
 public class InetSocket {
-    private String servName;
+    private static Socket socket;
+    private static SocketAddress socketAddress;
     private int servPort;
+    private String servName;
     private String reqAck, resAck;
-    private Socket socket;
     private Handler hSendThread, hMainThread;
     private DataOutputStream oStream;
     private ProgressDialog ringProgressDialog;
@@ -74,6 +76,7 @@ public class InetSocket {
         else
             dialog = "Waiting to be acknowledged from " + resAck;
         ringProgressDialog = ProgressDialog.show(baseActivity, "Please wait ...", dialog, true);
+        ringProgressDialog.show();
         ringProgressDialog.setCancelable(true);
         startThread(runnableConnect);
         // ConnectThread is terminated as soon as it establishes a connection to the server.
@@ -106,13 +109,7 @@ public class InetSocket {
         }  //  At this point, serverState == ServerAvailable
 
         Message msg = Message.obtain();
-        msg.obj = string; // 기존의 arg1은 정수형으로서 String 객체를 담을 수 없으므로 object 객체에 실어서 보냄
-        // 화면 회전 시 새로 peerView를 복구 할 때 이 중간에 보내진 key값에 대한 정확한 정보를 받을 수 없어 문제가 발생하게 된다
-        // 그래서 객체를 주고 받아서 저러한 문제를 해결할 수 있다
-        // 그러나 현재 우리 테트리스는 자바언어로 구성되어있고 서버의 모델은 C++로 구성되어있기 때문에 객체 단위로 전달이 불가
-        // Google -> Protobuf라는 클래스를 사용해서 다른 언어간의 통신을 도와주는 객체가 존재
-        // 각각의 언어에서 객체를 바이트 레프리젠테이션을 할 때 공통적으로 한다면 각각 언어 간의 객체를 부를 수 있어 Protobuf가 유용하다
-        // 그래서 protobuf에 맞춰서 객체를 만들어 전송하면 된다
+        msg.obj = string;
         msg.setTarget(hSendThread);
         msg.sendToTarget();
         return true;
@@ -121,7 +118,7 @@ public class InetSocket {
         @Override
         public void run() {
             try {
-                SocketAddress socketAddress = new InetSocketAddress(servName, servPort);
+                socketAddress = new InetSocketAddress(servName, servPort);
                 socket = new Socket();
                 socket.connect(socketAddress, maxTimeToJoin); // If this fails, then it will raise an exception
                 setServerStateFlag(flagConnected);
@@ -213,7 +210,6 @@ public class InetSocket {
     synchronized private void setServerStateFlag(int flag) { serverState = (serverState | flag); }
     synchronized private void resetServerStateFlag(int flag) { serverState = (serverState & ~flag); }
     private boolean waitForServerState(int flag, String who) {
-        //Log.d("InetSocket", who + " : waitForServerState(" + flag + ") called");
         int count = 0;
         while (((serverState & flag) != flag) && count < maxSleepCount) {
             Log.d("InetSocket", who + " : waitForServerState(" + flag + "&" + serverState + ") waiting...");
@@ -222,6 +218,10 @@ public class InetSocket {
         }
         if (((serverState & flag) == flag)) return true;
         else return false;
+    }
+
+    public ProgressDialog getRingProgressDialog() {
+        return ringProgressDialog;
     }
 }
 

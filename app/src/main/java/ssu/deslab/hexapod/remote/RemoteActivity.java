@@ -1,9 +1,11 @@
 package ssu.deslab.hexapod.remote;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -17,7 +19,9 @@ import android.widget.Toast;
 
 import ssu.deslab.hexapod.MainActivity;
 import ssu.deslab.hexapod.R;
+import ssu.deslab.hexapod.databinding.ActivityDestinationBinding;
 import ssu.deslab.hexapod.databinding.ActivityRemoteBinding;
+import ssu.deslab.hexapod.remote.networking.ChatServer;
 
 /**
  * Created by critic on 2017. 7. 17..
@@ -29,39 +33,42 @@ public class RemoteActivity extends AppCompatActivity{
     private ViewGroup.LayoutParams camLayout;
     private ViewGroup.LayoutParams mapLayout;
     private String savedResult = "Success Saved";
-    ActivityRemoteBinding arb;
+    private ChatServer chatServer;
+    ActivityRemoteBinding remoteBinding;
+    ActivityDestinationBinding destinationBinding;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        arb = DataBindingUtil.setContentView(this, R.layout.activity_remote);
-        camLayout = arb.camView.getLayoutParams();
-        mapLayout = arb.mapView.getLayoutParams();
+        remoteBinding = DataBindingUtil.setContentView(this, R.layout.activity_remote);
+        camLayout = remoteBinding.camView.getLayoutParams();
+        mapLayout = remoteBinding.mapView.getLayoutParams();
         oriMapHeight = mapLayout.height;
-        arb.destBtn.setOnClickListener(onDestBtnClick);
-        arb.camBtn.setOnClickListener(onCamBtnClick);
-        arb.saveBtn.setOnClickListener(onSaveBtnClick);
+        remoteBinding.destBtn.setOnClickListener(onDestBtnClick);
+        remoteBinding.camBtn.setOnClickListener(onCamBtnClick);
+        remoteBinding.saveBtn.setOnClickListener(onSaveBtnClick);
+        chatServer = MainActivity.getChatServer();
     }
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        // disConnect Code
+        MainActivity.getChatServer().disconnect();
     }
 
     public View.OnClickListener onCamBtnClick = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             if(camState == false) {
-                arb.camView.setVisibility(View.VISIBLE);
+                remoteBinding.camView.setVisibility(View.VISIBLE);
                 camLayout.height = oriMapHeight / 2;
                 mapLayout.height = oriMapHeight / 2;
-                arb.camView.setLayoutParams(camLayout);
-                arb.mapView.setLayoutParams(mapLayout);
+                remoteBinding.camView.setLayoutParams(camLayout);
+                remoteBinding.mapView.setLayoutParams(mapLayout);
                 camState = true;
             } else {
-                arb.camView.setVisibility(View.GONE);
+                remoteBinding.camView.setVisibility(View.GONE);
                 mapLayout.height = oriMapHeight;
-                arb.mapView.setLayoutParams(mapLayout);
+                remoteBinding.mapView.setLayoutParams(mapLayout);
                 camState = false;
             }
         }
@@ -99,7 +106,7 @@ public class RemoteActivity extends AppCompatActivity{
         public void onClick(View v) {
             LayoutInflater inflater = getLayoutInflater();
             final View dialogView = inflater.inflate(R.layout.activity_destination, null);
-            AlertDialog.Builder builder = new AlertDialog.Builder(RemoteActivity.this);
+            final AlertDialog.Builder builder = new AlertDialog.Builder(RemoteActivity.this);
             builder.setView(dialogView); //위에서 inflater가 만든 dialogView 객체 세팅 (Customize)
             ArrayAdapter<CharSequence> directionAdapter = ArrayAdapter.createFromResource(RemoteActivity.this, R.array.directions, android.R.layout.simple_spinner_item);
             directionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -110,7 +117,6 @@ public class RemoteActivity extends AppCompatActivity{
             builder.setPositiveButton("Send", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-//                    거리와 방향 전송 코드
                 }
             }); // setPositiveButton
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -119,9 +125,30 @@ public class RemoteActivity extends AppCompatActivity{
                     Toast.makeText(RemoteActivity.this, "Cancel", Toast.LENGTH_SHORT).show();
                 }
             }); // setNegativeButton
-            AlertDialog dialog = builder.create();
+            final AlertDialog dialog = builder.create();
             dialog.setCanceledOnTouchOutside(false);//없어지지 않도록 설정
             dialog.show();
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener()
+            {
+                @Override
+                public void onClick(View v)
+                {
+                    Boolean wantToCloseDialog = false;
+                    destinationBinding = DataBindingUtil.bind(dialogView);
+                    String distance = destinationBinding.distanceTxt.getText().toString();
+                    String direction = (String) destinationBinding.directionSpinner.getSelectedItem();
+                    if(distance.length() == 0) {
+                        Toast.makeText(builder.getContext(), "거리 값을 입력하세요", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Log.d("dest", distance + ", " + direction);
+                        wantToCloseDialog = true;
+                        chatServer.send(distance + ", " + direction);
+                    }
+                    if(wantToCloseDialog)
+                        dialog.dismiss();
+                }
+            });
         } // onClick
     }; // onDestBtnClick
+
 }
