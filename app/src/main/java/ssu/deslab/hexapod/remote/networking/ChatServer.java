@@ -31,11 +31,7 @@ public class ChatServer {
             inetSocket.getRingProgressDialog().dismiss();
             return false;
         }
-        if (inetSocket.send("/nick " + myNickName + String.valueOf('\n')) == false) {
-            inetSocket.getRingProgressDialog().dismiss();
-            return false;
-        }
-        if (inetSocket.send("/who\n") == false) {
+        if (inetSocket.send(myNickName + String.valueOf('\n')) == false) {
             inetSocket.getRingProgressDialog().dismiss();
             return false;
         }

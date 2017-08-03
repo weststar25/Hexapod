@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import ssu.deslab.hexapod.MainActivity;
@@ -136,13 +137,20 @@ public class RemoteActivity extends AppCompatActivity{
                     Boolean wantToCloseDialog = false;
                     destinationBinding = DataBindingUtil.bind(dialogView);
                     String distance = destinationBinding.distanceTxt.getText().toString();
-                    String direction = (String) destinationBinding.directionSpinner.getSelectedItem();
+                    String direction = "";
+                    switch (destinationBinding.directionSpinner.getSelectedItemPosition()) {
+                        case 0: direction = "e"; break;
+                        case 1: direction = "w"; break;
+                        case 2: direction = "s"; break;
+                        case 3: direction = "n"; break;
+                    }
                     if(distance.length() == 0) {
                         Toast.makeText(builder.getContext(), "거리 값을 입력하세요", Toast.LENGTH_SHORT).show();
                     } else {
                         Log.d("dest", distance + ", " + direction);
                         wantToCloseDialog = true;
-                        chatServer.send(distance + ", " + direction);
+                        chatServer.send(distance + " d");
+                        chatServer.send(direction + " r");
                     }
                     if(wantToCloseDialog)
                         dialog.dismiss();
