@@ -223,6 +223,9 @@ public class InetSocket {
     public ProgressDialog getRingProgressDialog() {
         return ringProgressDialog;
     }
+    public void sethMainThread (Handler h) {
+        this.hMainThread = h;
+    }
 }
 
 

@@ -30,10 +30,8 @@ public class MainActivity extends AppCompatActivity implements Serializable {
     private int robotPort;
     private final int reqCode4HistoryActivity = 0;
     private final int reqCode4RemoteActivity = 1;
-    private boolean connectState = false;
     protected static ChatServer chatServer;
     protected Handler myHandler;
-    public MainActivity mainActivity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

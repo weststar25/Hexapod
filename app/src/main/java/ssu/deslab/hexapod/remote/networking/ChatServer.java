@@ -40,16 +40,16 @@ public class ChatServer {
     public boolean send(String msg) {
         return inetSocket.send(msg);
     }
-    public char getchar(Message msg) {
+    public String getMessage(Message msg) {
         String string = (String) msg.obj; // string delivered from peer
-        string = string.replaceAll("\u001B\\[[;\\d]*m", ""); // remove color codes in the line
+        string = string.replaceAll("\u001B\\[[;\\d]*m", "");
         String peerNickNameP2 = peerNickName + ": ";
         String nicknameP2 = string.substring(0, peerNickNameP2.length());
         if (peerNickNameP2.compareTo(nicknameP2) != 0) {
             Log.d("ChatServer", "not my peer (" + nicknameP2 + ")");
-            return 'Q';
+            return "Q";
         }
-        return string.charAt(nicknameP2.length());
+        return string;
     }
     public boolean disconnect() {
         String string = "/quit\n";

@@ -1,11 +1,11 @@
 package ssu.deslab.hexapod.remote;
 
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
-import android.widget.Switch;
 import android.widget.Toast;
 
 import ssu.deslab.hexapod.MainActivity;
@@ -33,10 +32,18 @@ public class RemoteActivity extends AppCompatActivity{
     private int oriMapHeight = 0;
     private ViewGroup.LayoutParams camLayout;
     private ViewGroup.LayoutParams mapLayout;
-    private String savedResult = "Success Saved";
     private ChatServer chatServer;
+    protected String recvMsg;
     ActivityRemoteBinding remoteBinding;
     ActivityDestinationBinding destinationBinding;
+
+    private Handler recvHandler = new Handler() {
+        public void handlerMessage(Message msg) {
+            if(chatServer.isAvailable() == false ) return;
+            recvMsg = chatServer.getMessage(msg);
+            Log.d("recvMsg", recvMsg);
+        }
+    };
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -49,7 +56,9 @@ public class RemoteActivity extends AppCompatActivity{
         remoteBinding.camBtn.setOnClickListener(onCamBtnClick);
         remoteBinding.saveBtn.setOnClickListener(onSaveBtnClick);
         chatServer = MainActivity.getChatServer();
+        chatServer.getInetSocket().sethMainThread(recvHandler);
     }
+
     @Override
     public void onBackPressed() {
         super.onBackPressed();
@@ -149,8 +158,9 @@ public class RemoteActivity extends AppCompatActivity{
                     } else {
                         Log.d("dest", distance + ", " + direction);
                         wantToCloseDialog = true;
-                        chatServer.send(distance + " d");
-                        chatServer.send(direction + " r");
+                        if(chatServer.send(distance + " d") == true && chatServer.send(direction + " r") == true) {
+                            remoteBinding.destBtn.setVisibility(View.GONE);
+                        }
                     }
                     if(wantToCloseDialog)
                         dialog.dismiss();
