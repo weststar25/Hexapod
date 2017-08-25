@@ -1,37 +1,28 @@
 package ssu.deslab.hexapod;
 
-
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.os.Handler;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Toast;
-
-import java.io.Serializable;
 
 import ssu.deslab.hexapod.databinding.ActivityMainBinding;
 import ssu.deslab.hexapod.databinding.ActivityConnectBinding;
 import ssu.deslab.hexapod.history.HistoryActivity;
 import ssu.deslab.hexapod.remote.RemoteActivity;
-import ssu.deslab.hexapod.remote.networking.ChatServer;
 
-public class MainActivity extends AppCompatActivity implements Serializable {
+public class MainActivity extends AppCompatActivity{
     ActivityMainBinding mainBinding;
     ActivityConnectBinding connectBinding;
     private String robotIP;
-    private String connectResult = "Connection Success";
     private int robotPort;
     private final int reqCode4HistoryActivity = 0;
     private final int reqCode4RemoteActivity = 1;
-    protected static ChatServer chatServer;
-    protected Handler myHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,22 +31,6 @@ public class MainActivity extends AppCompatActivity implements Serializable {
         mainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         mainBinding.connectBtn.setOnClickListener(onConnectBtnClick);
         mainBinding.historyBtn.setOnClickListener(onHistoryBtnClick);
-        myHandler = new Handler();
-        chatServer = new ChatServer(myHandler, MainActivity.this);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if(chatServer.getInetSocket().getRingProgressDialog() != null)
-            chatServer.getInetSocket().getRingProgressDialog().dismiss();
-    }
-
-    public enum UserCommand {
-        NOP(-1), Fail(0), Start(1);
-        private final int value;
-        private UserCommand(int value) { this.value = value; }
-        public int value() { return value; }
     }
 
     public View.OnClickListener onConnectBtnClick = new View.OnClickListener() {
@@ -98,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements Serializable {
                         wantToCloseDialog = true;
                         robotIP = connectBinding.ipTxt.getText().toString();
                         robotPort = Integer.parseInt(connectBinding.portTxt.getText().toString());
-                        executeUserCommand(UserCommand.Start);
+                        startRemoteActivity(reqCode4RemoteActivity);
                     }
                     if(wantToCloseDialog)
                         dialog.dismiss();
@@ -121,38 +96,8 @@ public class MainActivity extends AppCompatActivity implements Serializable {
 
     public void startRemoteActivity(int reqCode) {
         Intent intent = new Intent(MainActivity.this, RemoteActivity.class);
+        intent.putExtra("ip", robotIP);
+        intent.putExtra("port", robotPort);
         startActivityForResult(intent,reqCode);
-    }
-
-    private Runnable runnableConnect = new Runnable() {
-        @Override
-        public void run() {
-            if(chatServer.connect(robotIP, robotPort, "App", "Robot") == false || chatServer.send("Hi") == false) {
-                connectResult = "Connection Error!";
-                executeUserCommand(UserCommand.Fail);
-                return;
-            }
-            startRemoteActivity(reqCode4RemoteActivity);
-            Toast.makeText(MainActivity.this, connectResult, Toast.LENGTH_LONG).show();
-        }
-    };
-
-    private Runnable runnableFail = new Runnable() {
-        @Override
-        public void run() {
-            Toast.makeText(MainActivity.this, connectResult, Toast.LENGTH_LONG).show();
-        }
-    };
-
-    private void executeUserCommand(UserCommand cmd) {
-        switch(cmd.value()) {
-            case 0 : myHandler.post(runnableFail); break;
-            case 1 : myHandler.post(runnableConnect); break;
-            default : Log.d("MainActivity","Unknown User Command!"); break;
-        }
-    }
-
-    public static ChatServer getChatServer() {
-        return chatServer;
     }
 }

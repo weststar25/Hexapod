@@ -12,43 +12,30 @@ import android.util.Log;
 import java.io.Serializable;
 
 import ssu.deslab.hexapod.MainActivity;
+import ssu.deslab.hexapod.remote.RemoteActivity;
 
 public class ChatServer {
-    private String myNickName, peerNickName;
-    private static InetSocket inetSocket;
+    private InetSocket inetSocket;
 
-    public ChatServer(Handler h, MainActivity a) { inetSocket = new InetSocket(h, a); }
+    public ChatServer(Handler h, RemoteActivity a) { inetSocket = new InetSocket(h, a); }
     public boolean isAvailable() {
         return inetSocket.isAvailable();
     }
-    public boolean isAcknowledged() {
-        return inetSocket.isAcknowledged();
-    }
-    public boolean connect(String hname, int hport, String myName, String peerName) {
-        myNickName = myName;
-        peerNickName = peerName;
-        if (inetSocket.connect(hname, hport, "/who\n", peerName) == false) {
-            inetSocket.getRingProgressDialog().dismiss();
-            return false;
-        }
-        if (inetSocket.send(myNickName + String.valueOf('\n')) == false) {
-            inetSocket.getRingProgressDialog().dismiss();
-            return false;
-        }
+    public boolean connect(String hname, int hport) {
+        if (inetSocket.connect(hname, hport) == false) { return false; }
+        if (inetSocket.send("APP" + String.valueOf('\n')) == false) { return false; }
+        if (inetSocket.send("Hello\n") == false) { return false; }
         return true;
     }
     public boolean send(String msg) {
         return inetSocket.send(msg);
     }
     public String getMessage(Message msg) {
-        String string = (String) msg.obj; // string delivered from peer
+        String string = (String) msg.obj;
         string = string.replaceAll("\u001B\\[[;\\d]*m", "");
-        String peerNickNameP2 = peerNickName + ": ";
-        String nicknameP2 = string.substring(0, peerNickNameP2.length());
-        if (peerNickNameP2.compareTo(nicknameP2) != 0) {
-            Log.d("ChatServer", "not my peer (" + nicknameP2 + ")");
-            return "Q";
-        }
+        if(string.compareTo("close") == 0)
+            return "close";
+
         return string;
     }
     public boolean disconnect() {
@@ -56,9 +43,5 @@ public class ChatServer {
         if (inetSocket.send(string) == false)
             return false;
         return inetSocket.disconnect();
-    }
-
-    public InetSocket getInetSocket() {
-        return inetSocket;
     }
 }

@@ -1,6 +1,7 @@
 package ssu.deslab.hexapod.remote;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -23,27 +24,43 @@ import ssu.deslab.hexapod.databinding.ActivityDestinationBinding;
 import ssu.deslab.hexapod.databinding.ActivityRemoteBinding;
 import ssu.deslab.hexapod.remote.networking.ChatServer;
 
+import static java.lang.Thread.sleep;
+
 /**
  * Created by critic on 2017. 7. 17..
  */
 
 public class RemoteActivity extends AppCompatActivity{
     private boolean camState = false;
+    private final int reqCode4MainActivity = 0;
     private int oriMapHeight = 0;
+    private int robotPort;
+    private String robotIP;
+    private String connectResult = "Connection Success";
     private ViewGroup.LayoutParams camLayout;
     private ViewGroup.LayoutParams mapLayout;
-    private ChatServer chatServer;
-    protected String recvMsg;
     ActivityRemoteBinding remoteBinding;
     ActivityDestinationBinding destinationBinding;
 
-    private Handler recvHandler = new Handler() {
-        public void handlerMessage(Message msg) {
-            if(chatServer.isAvailable() == false ) return;
-            recvMsg = chatServer.getMessage(msg);
+
+    protected ChatServer chatServer;
+    protected Handler myHandler;
+    protected Handler recvHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            if (chatServer.isAvailable() == false) return;
+            String recvMsg = chatServer.getMessage(msg);
             Log.d("recvMsg", recvMsg);
+            if(recvMsg.compareTo("close") == 0)
+                onBackPressed();
         }
     };
+
+    public enum UserCommand {
+        Fail(0), Start(1);
+        private final int value;
+        private UserCommand(int value) { this.value = value; }
+        public int value() { return value; }
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,14 +72,20 @@ public class RemoteActivity extends AppCompatActivity{
         remoteBinding.destBtn.setOnClickListener(onDestBtnClick);
         remoteBinding.camBtn.setOnClickListener(onCamBtnClick);
         remoteBinding.saveBtn.setOnClickListener(onSaveBtnClick);
-        chatServer = MainActivity.getChatServer();
-        chatServer.getInetSocket().sethMainThread(recvHandler);
+
+        Intent intent = getIntent();
+        robotIP = intent.getStringExtra("ip");
+        robotPort = intent.getIntExtra("port", 9000);
+        myHandler = new Handler();
+        chatServer = new ChatServer(recvHandler, RemoteActivity.this);
+        executeUserCommand(UserCommand.Start);
     }
 
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        MainActivity.getChatServer().disconnect();
+        if(chatServer.isAvailable())
+            chatServer.disconnect();
     }
 
     public View.OnClickListener onCamBtnClick = new View.OnClickListener() {
@@ -159,7 +182,7 @@ public class RemoteActivity extends AppCompatActivity{
                         Log.d("dest", distance + ", " + direction);
                         wantToCloseDialog = true;
                         if(chatServer.send(distance + " d") == true && chatServer.send(direction + " r") == true) {
-                            remoteBinding.destBtn.setVisibility(View.GONE);
+//                            remoteBinding.destBtn.setVisibility(View.GONE);
                         }
                     }
                     if(wantToCloseDialog)
@@ -169,4 +192,41 @@ public class RemoteActivity extends AppCompatActivity{
         } // onClick
     }; // onDestBtnClick
 
+    public void returnMainActivity(int reqCode) {
+        Intent intent = new Intent(RemoteActivity.this, MainActivity.class);
+        startActivityForResult(intent,reqCode);
+    }
+
+    private Runnable runnableConnect = new Runnable() {
+        @Override
+        public void run() {
+            if(chatServer.connect(robotIP, robotPort) == false) {
+                connectResult = "Connection Error!";
+                executeUserCommand(UserCommand.Fail);
+                return;
+            }
+            sleep(500);
+            Toast.makeText(RemoteActivity.this, connectResult, Toast.LENGTH_LONG).show();
+        }
+    };
+
+    private Runnable runnableFail = new Runnable() {
+        @Override
+        public void run() {
+            Toast.makeText(RemoteActivity.this, connectResult, Toast.LENGTH_LONG).show();
+            returnMainActivity(reqCode4MainActivity);
+        }
+    };
+
+    private void executeUserCommand(UserCommand cmd) {
+        switch(cmd.value()) {
+            case 0 : myHandler.post(runnableFail); break;
+            case 1 : myHandler.post(runnableConnect); break;
+            default : Log.d("MainActivity","Unknown User Command!"); break;
+        }
+    }
+    public void sleep(int time) {
+        try { Thread.sleep(time); }
+        catch (Exception e) { e.printStackTrace(); }
+    }
 }

@@ -10,7 +10,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Type the Distance Value(In meters)"/>
+            android:text="Type the Distance Value(In centimeters)"/>
 
         <EditText
             android:id="@+id/distanceTxt"

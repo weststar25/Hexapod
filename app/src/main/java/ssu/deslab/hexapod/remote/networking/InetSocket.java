@@ -14,17 +14,14 @@ import android.util.Log;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
-import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 
 public class InetSocket {
-    private static Socket socket;
-    private static SocketAddress socketAddress;
+    private Socket socket;
     private int servPort;
     private String servName;
-    private String reqAck, resAck;
     private Handler hSendThread, hMainThread;
     private DataOutputStream oStream;
     private ProgressDialog ringProgressDialog;
@@ -52,12 +49,7 @@ public class InetSocket {
     public boolean isAvailable() {
         return ((serverState & ServerAvailable) == ServerAvailable);
     }
-    public boolean isAcknowledged() { // progress bar 중단지점을 알기위해 acknowledged 수신 하는 함수
-        if (reqAck == null) return true;
-        else return false;
-    }
-    public boolean connect(String hname, int hport, String req, String ack) {
-        String dialog;
+    public boolean connect(String hname, int hport) {
         Log.d("InetSocket", "connect() called in serverState = " + serverState);
         if ((serverState & flagConnecting) == flagConnecting || (serverState & flagConnected) == flagConnected)
             return false;
@@ -69,15 +61,10 @@ public class InetSocket {
         setServerStateFlag(flagConnecting);
         servName = hname;
         servPort = hport;
-        reqAck = req;
-        resAck = ack;
-        if (reqAck == null)
-            dialog = "Connecting to " + hname + ":" + hport;
-        else
-            dialog = "Waiting to be acknowledged from " + resAck;
-        ringProgressDialog = ProgressDialog.show(baseActivity, "Please wait ...", dialog, true);
+        String dialog = "Connecting with Hexapod";
+        ringProgressDialog = ProgressDialog.show(baseActivity, "Please wait", dialog, true);
         ringProgressDialog.show();
-        ringProgressDialog.setCancelable(true);
+        ringProgressDialog.setCancelable(false);
         startThread(runnableConnect);
         // ConnectThread is terminated as soon as it establishes a connection to the server.
         nMsgsSent = 0;
@@ -118,7 +105,7 @@ public class InetSocket {
         @Override
         public void run() {
             try {
-                socketAddress = new InetSocketAddress(servName, servPort);
+                SocketAddress socketAddress  = new InetSocketAddress(servName, servPort);
                 socket = new Socket();
                 socket.connect(socketAddress, maxTimeToJoin); // If this fails, then it will raise an exception
                 setServerStateFlag(flagConnected);
@@ -129,8 +116,8 @@ public class InetSocket {
                 e.printStackTrace();
             }
             resetServerStateFlag(flagConnecting);
-            if (reqAck == null)
-                ringProgressDialog.dismiss();
+            sleep(maxTimeToWait);
+            ringProgressDialog.dismiss();
         }
     };
     private Runnable runnableSend = new Runnable() {
@@ -171,17 +158,6 @@ public class InetSocket {
                 String string;
                 while (true) {
                     do { string = br.readLine(); } while (string.length() == 0);
-                    if (reqAck != null) {
-                        if (string.contains(resAck) == true) {
-                            ringProgressDialog.dismiss();
-                            reqAck = null;
-                        }
-                        else {
-                            sleep(maxPollingInterval);
-                            send(reqAck);
-                        }
-                        continue;
-                    }
                     Message msg = Message.obtain();
                     msg.obj = string;
                     msg.setTarget(hMainThread);
@@ -218,13 +194,6 @@ public class InetSocket {
         }
         if (((serverState & flag) == flag)) return true;
         else return false;
-    }
-
-    public ProgressDialog getRingProgressDialog() {
-        return ringProgressDialog;
-    }
-    public void sethMainThread (Handler h) {
-        this.hMainThread = h;
     }
 }
 
