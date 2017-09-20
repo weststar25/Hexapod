@@ -10,7 +10,7 @@ import android.view.View;
 import ssu.deslab.hexapod.R;
 import ssu.deslab.hexapod.databinding.ActivityHistoryBodyBinding;
 import ssu.deslab.hexapod.history.common.util.DataUtil;
-import ssu.deslab.hexapod.history.common.SimpleDividerItemDecoration;
+import ssu.deslab.hexapod.history.common.view.SimpleDividerItemDecoration;
 
 /**
  * Created by critic on 2017. 7. 4..

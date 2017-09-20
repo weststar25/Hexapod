@@ -7,18 +7,18 @@ package ssu.deslab.hexapod.history.common.model;
 public class HistoryData {
     private String mSavedDate;
     private String mLocation;
-    private String mSavedImageURL;
+    private String mSavedImagePath;
 
     public HistoryData() {
         this.mSavedDate = "2017년 7월 4일 화요일";
         this.mLocation = "숭실대학교 형남공학관";
-        this.mSavedImageURL = "https://www.naver.com";
+        this.mSavedImagePath = "https://www.naver.com";
     }
 
     public HistoryData(String mSavedDate, String mLocation, String mSavedImageURL) {
         this.mSavedDate = mSavedDate;
         this.mLocation = mLocation;
-        this.mSavedImageURL = mSavedImageURL;
+        this.mSavedImagePath = mSavedImageURL;
     }
 
     public String getmSavedDate() {
@@ -38,10 +38,10 @@ public class HistoryData {
     }
 
     public String getmSavedImage() {
-        return mSavedImageURL;
+        return mSavedImagePath;
     }
 
     public void setmSavedImage(String mSavedImageURL) {
-        this.mSavedImageURL = mSavedImageURL;
+        this.mSavedImagePath = mSavedImageURL;
     }
 }

@@ -33,9 +33,6 @@ public class ChatServer {
     public String getMessage(Message msg) {
         String string = (String) msg.obj;
         string = string.replaceAll("\u001B\\[[;\\d]*m", "");
-        if(string.compareTo("close") == 0)
-            return "close";
-
         return string;
     }
     public boolean disconnect() {

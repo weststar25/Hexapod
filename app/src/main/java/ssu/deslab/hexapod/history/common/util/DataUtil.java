@@ -15,15 +15,13 @@ import ssu.deslab.hexapod.history.common.model.HistoryData;
  */
 
 public class DataUtil {
+    public static List<HistoryData> datas = new ArrayList();
+
+    public static void addData(HistoryData data) {
+        datas.add(data);
+    }
+
     public static List<HistoryData> getDatas(){
-
-        List<HistoryData> datas = new ArrayList();
-
-        datas.add(new HistoryData(getDate(), "숭실대", "http://cfile25.uf.tistory.com/image/251F6B4C558E627E26807B"));
-        datas.add(new HistoryData(getDate(), "숭실대", "http://image.celebtide.com/celeb/new/ve/279_ve_1452259300.jpg"));
-        datas.add(new HistoryData(getDate(), "숭실대", "http://res.heraldm.com/content/image/2013/12/01/20131201000224_0.jpg"));
-        datas.add(new HistoryData(getDate(), "숭실대", "http://cfile8.uf.tistory.com/image/194599374F7049A9010251"));
-
         return datas;
     }
 

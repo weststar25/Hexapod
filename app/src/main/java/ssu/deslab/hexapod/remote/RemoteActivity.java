@@ -3,7 +3,13 @@ package ssu.deslab.hexapod.remote;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -14,6 +20,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -24,24 +33,31 @@ import ssu.deslab.hexapod.databinding.ActivityDestinationBinding;
 import ssu.deslab.hexapod.databinding.ActivityRemoteBinding;
 import ssu.deslab.hexapod.remote.networking.ChatServer;
 
-import static java.lang.Thread.sleep;
-
 /**
  * Created by critic on 2017. 7. 17..
  */
 
-public class RemoteActivity extends AppCompatActivity{
+public class RemoteActivity extends AppCompatActivity {
     private boolean camState = false;
+    private boolean recvState = false;
     private final int reqCode4MainActivity = 0;
+    private int oriMapWidth = 0;
     private int oriMapHeight = 0;
-    private int robotPort;
+    private int robotPort = 0;
+    private int locationX = 0;
+    private int locationY = 0;
+    private int locationI = 0;
     private String robotIP;
     private String connectResult = "Connection Success";
+    private Bitmap mapBitmap;
+    private Bitmap resourceBitmap;
+    private Bitmap[] directionBitmap;
+    private Canvas canvas;
+    private Paint paint;
     private ViewGroup.LayoutParams camLayout;
     private ViewGroup.LayoutParams mapLayout;
     ActivityRemoteBinding remoteBinding;
     ActivityDestinationBinding destinationBinding;
-
 
     protected ChatServer chatServer;
     protected Handler myHandler;
@@ -50,8 +66,36 @@ public class RemoteActivity extends AppCompatActivity{
             if (chatServer.isAvailable() == false) return;
             String recvMsg = chatServer.getMessage(msg);
             Log.d("recvMsg", recvMsg);
-            if(recvMsg.compareTo("close") == 0)
+            if(recvMsg.compareTo("close") == 0) {
+                Toast.makeText(RemoteActivity.this, "Socket Closed", Toast.LENGTH_SHORT).show();
                 onBackPressed();
+                return;
+            }
+            else {
+                int index = recvMsg.indexOf(',');
+                int tempX, tempY;
+                tempX = Integer.parseInt(recvMsg.substring(0, index));
+                tempY = Integer.parseInt(recvMsg.substring(index + 1));
+
+                if      (tempX ==  1 && tempY ==  0)    locationI = 0;
+                else if (tempX == -1 && tempY ==  0)    locationI = 1;
+                else if (tempX ==  0 && tempY ==  1)    locationI = 2;
+                else if (tempX ==  0 && tempY == -1)    locationI = 3;
+                else if (tempX ==  0 && tempY ==  0)    locationI = 4;
+
+                if(recvState == false) {
+                    locationX += ((oriMapWidth / 2) - 15);
+                    locationY += (oriMapHeight - 90);
+                    canvas.drawBitmap(directionBitmap[locationI], locationX, locationY, paint);
+                    recvState = true;
+                }
+                else {
+                    locationX += (tempX * 50);
+                    locationY += (tempY * 50);
+                    canvas.drawBitmap(directionBitmap[locationI],locationX, locationY, paint);
+                }
+                remoteBinding.mapView.setImageDrawable(new BitmapDrawable(getResources(), mapBitmap));
+            }
         }
     };
 
@@ -66,18 +110,23 @@ public class RemoteActivity extends AppCompatActivity{
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         remoteBinding = DataBindingUtil.setContentView(this, R.layout.activity_remote);
-        camLayout = remoteBinding.camView.getLayoutParams();
-        mapLayout = remoteBinding.mapView.getLayoutParams();
-        oriMapHeight = mapLayout.height;
+        remoteBinding.connectedStatus.setText("연결상태양호");
+        remoteBinding.connectedStatus.setTextColor(Color.GREEN);
         remoteBinding.destBtn.setOnClickListener(onDestBtnClick);
         remoteBinding.camBtn.setOnClickListener(onCamBtnClick);
-        remoteBinding.saveBtn.setOnClickListener(onSaveBtnClick);
+
+        directionBitmap = new Bitmap[5];
+        for(int i=0; i<directionBitmap.length; i++) {
+            directionBitmap[i] = BitmapFactory.decodeResource(getResources(), R.drawable.d_1_right + i);
+        }
 
         Intent intent = getIntent();
         robotIP = intent.getStringExtra("ip");
         robotPort = intent.getIntExtra("port", 9000);
         myHandler = new Handler();
         chatServer = new ChatServer(recvHandler, RemoteActivity.this);
+        mapLayout = remoteBinding.mapView.getLayoutParams();
+        camLayout = remoteBinding.camView.getLayoutParams();
         executeUserCommand(UserCommand.Start);
     }
 
@@ -94,12 +143,21 @@ public class RemoteActivity extends AppCompatActivity{
             if(camState == false) {
                 remoteBinding.camView.setVisibility(View.VISIBLE);
                 camLayout.height = oriMapHeight / 2;
+                mapLayout.width = oriMapWidth;
                 mapLayout.height = oriMapHeight / 2;
                 remoteBinding.camView.setLayoutParams(camLayout);
                 remoteBinding.mapView.setLayoutParams(mapLayout);
                 camState = true;
+                WebSettings ws = remoteBinding.camView.getSettings();
+                ws.setJavaScriptEnabled(true);
+                ws.setSupportZoom(false);
+                ws.setBuiltInZoomControls(false);
+                ws.setUseWideViewPort(true);
+                ws.setLoadWithOverviewMode(true);
+                remoteBinding.camView.loadUrl("http://172.20.10.6:8080/?action=stream");
             } else {
                 remoteBinding.camView.setVisibility(View.GONE);
+                mapLayout.width = oriMapWidth;
                 mapLayout.height = oriMapHeight;
                 remoteBinding.mapView.setLayoutParams(mapLayout);
                 camState = false;
@@ -192,11 +250,6 @@ public class RemoteActivity extends AppCompatActivity{
         } // onClick
     }; // onDestBtnClick
 
-    public void returnMainActivity(int reqCode) {
-        Intent intent = new Intent(RemoteActivity.this, MainActivity.class);
-        startActivityForResult(intent,reqCode);
-    }
-
     private Runnable runnableConnect = new Runnable() {
         @Override
         public void run() {
@@ -205,7 +258,17 @@ public class RemoteActivity extends AppCompatActivity{
                 executeUserCommand(UserCommand.Fail);
                 return;
             }
-            sleep(500);
+            sleep(1000);
+            oriMapWidth = remoteBinding.mapView.getWidth();
+            oriMapHeight = remoteBinding.mapView.getHeight();
+            if(resourceBitmap == null) {
+                resourceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bg);
+                mapBitmap = Bitmap.createBitmap(oriMapWidth, oriMapHeight, Bitmap.Config.RGB_565);
+                canvas = new Canvas(mapBitmap);
+                canvas.drawBitmap(resourceBitmap, 0, 0, null);
+                paint = new Paint();
+                paint.setColor(0xFFFF0000);
+            }
             Toast.makeText(RemoteActivity.this, connectResult, Toast.LENGTH_LONG).show();
         }
     };
@@ -225,6 +288,12 @@ public class RemoteActivity extends AppCompatActivity{
             default : Log.d("MainActivity","Unknown User Command!"); break;
         }
     }
+
+    public void returnMainActivity(int reqCode) {
+        Intent intent = new Intent(RemoteActivity.this, MainActivity.class);
+        startActivityForResult(intent,reqCode);
+    }
+
     public void sleep(int time) {
         try { Thread.sleep(time); }
         catch (Exception e) { e.printStackTrace(); }

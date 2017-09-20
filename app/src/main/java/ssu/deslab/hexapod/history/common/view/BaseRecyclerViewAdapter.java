@@ -1,4 +1,4 @@
-package ssu.deslab.hexapod.history.common;
+package ssu.deslab.hexapod.history.common.view;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;

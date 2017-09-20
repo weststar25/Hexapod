@@ -1,4 +1,4 @@
-package ssu.deslab.hexapod.history.common;
+package ssu.deslab.hexapod.history.common.view;
 
 /**
  * Created by critic on 2017. 7. 17..

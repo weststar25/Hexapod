@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import ssu.deslab.hexapod.R;
 import ssu.deslab.hexapod.databinding.ActivityHistoryItemBinding;
 import ssu.deslab.hexapod.history.common.model.HistoryData;
-import ssu.deslab.hexapod.history.common.BaseRecyclerViewAdapter;
+import ssu.deslab.hexapod.history.common.view.BaseRecyclerViewAdapter;
 
 /**
  * Created by critic on 2017. 7. 17..
