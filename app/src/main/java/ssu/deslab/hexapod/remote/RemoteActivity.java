@@ -141,6 +141,7 @@ public class RemoteActivity extends AppCompatActivity {
         @Override
         public void onClick(View v) {
             if(camState == false) {
+                chatServer.send("c");
                 remoteBinding.camView.setVisibility(View.VISIBLE);
                 camLayout.height = oriMapHeight / 2;
                 mapLayout.width = oriMapWidth;
@@ -161,6 +162,7 @@ public class RemoteActivity extends AppCompatActivity {
                 mapLayout.height = oriMapHeight;
                 remoteBinding.mapView.setLayoutParams(mapLayout);
                 camState = false;
+                chatServer.send("q");
             }
         }
     };
